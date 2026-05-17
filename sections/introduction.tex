@@ -1,0 +1,100 @@
+\subsection{Motivation}
+
+Unmanned aerial vehicles (UAVs) controlled through conventional radio transmitters require
+the operator to hold a dedicated handheld unit with two joysticks throughout a flight session.
+This form factor demands bilateral manual dexterity, prevents the operator from simultaneously
+performing other tasks, and creates a barrier for users without prior RC flight experience.
+Hands-free or minimal-hardware control interfaces could lower this barrier and enable use
+cases in which the operator's hands must remain free, such as first-response inspection or
+assistive applications.
+
+Voice command is a well-understood interaction modality that requires no additional hardware
+beyond a microphone and a recognition module, imposes no constraint on hand posture, and
+maps naturally to a discrete set of high-level flight maneuvers.
+This project investigates whether an offline voice-command ground unit can provide sufficient
+control fidelity for stable takeoff, directional flight, and landing of a five-inch class quadrotor,
+using the ExpressLRS open-source RF link as the wireless bridge.
+
+\subsection{Background and Related Work}
+
+\subsubsection{FPV Quadrotor Platform}
+
+Five-inch class FPV (first-person-view) quadrotors are a well-characterized platform that
+balances agility, payload capacity, and component availability.
+Standard flight controllers in this class run the Betaflight open-source firmware, which exposes
+a CRSF serial interface for RC input and returns sensor telemetry on the same link.
+This existing ecosystem provides a stable, well-documented integration target for the ground
+control unit.
+
+\subsubsection{ExpressLRS}
+
+ExpressLRS (ELRS) is an open-source 2.4~GHz RC link protocol derived from the LoRa physical
+layer \cite{elrs-github}.
+It achieves packet update rates from 50~Hz to 1000~Hz with measured round-trip latencies
+below 5~ms at 250~Hz, significantly lower than legacy protocols such as Futaba S-FHSS
+(55~Hz) or FrSky D16 (150~Hz).
+The open firmware stack allows the protocol to run on commodity hardware including the
+RadioMaster RP1 and RP2 modules, which use an Espressif ESP8285 microcontroller and a
+Semtech SX1280 2.4~GHz transceiver.
+
+\subsubsection{Offline Voice Recognition}
+
+Offline keyword-spotting modules such as the VC02 perform fixed-vocabulary recognition
+entirely on-device without network connectivity, achieving recognition latencies typically below
+500~ms and operating reliably in environments where cloud-based services are impractical.
+The VC02 communicates recognized commands as single-byte UART messages, making
+integration with a microcontroller straightforward.
+
+\subsection{System Overview}
+
+\begin{figure}[htb!]
+    \centering
+    \fbox{\parbox{0.9\linewidth}{\centering
+        \vspace{1.8cm}
+        \textit{Placeholder block diagram---replace with final vector graphic.}
+        \vspace{1.8cm}}}
+    \caption{Voice-controlled FPV drone system architecture (ground unit, RF link, and
+        airframe).}
+    \label{fig:block-diagram}
+\end{figure}
+
+Figure~\ref{fig:block-diagram} shows the complete system.
+The ground unit consists of an ESP32 connected to a VC02 voice recognition module and an
+SSD1306 OLED display.
+The ESP32 encodes operator voice commands as CRSF RC frames and drives the RadioMaster RP2
+module via UART.
+The RP2, reflashed with ELRS transmitter firmware, broadcasts RC frames at 50~Hz over the
+2.4~GHz ISM band.
+On the aircraft, a RadioMaster RX24T ELRS receiver forwards decoded RC channel data over
+CRSF to the SpeedyBee F405~V5 flight controller running Betaflight.
+The flight controller drives four 1860~KV brushless motors through an OX32 55~A four-in-one
+ESC.
+Barometric altitude telemetry from the flight controller is relayed back through the same RF link
+and decoded by the ESP32, then displayed on the OLED for the ground operator.
+
+\subsection{High-Level Requirements}
+
+Table~\ref{tab:hlr} lists the top-level performance requirements for the system.
+
+\begin{table}[htb!]
+    \centering
+    \caption{High-level system requirements.}
+    \label{tab:hlr}
+    \begin{tabularx}{\linewidth}{l X l}
+        \hline
+        \textbf{Requirement} & \textbf{Description} & \textbf{Target} \\
+        \hline
+        R1 & Voice command recognition latency from utterance end to VC02 UART byte &
+            $<$1~s \\
+        R2 & End-to-end command latency from VC02 byte to CRSF frame departure at RP2 &
+            $<$40~ms \\
+        R3 & RF link update rate during flight & $\geq$50~Hz \\
+        R4 & Stable hover after takeoff command without pilot intervention &
+            $\geq$5~s \\
+        R5 & Directional movement response to forward/backward command & Observable
+            displacement \\
+        R6 & Successful autonomous landing (disarm without crash) & 100\% of attempts \\
+        R7 & Barometric altitude displayed on OLED during flight & Continuous \\
+        \hline
+    \end{tabularx}
+\end{table}

@@ -1,0 +1,71 @@
+\section{Costs}
+
+Table~\ref{tab:bom-major} summarizes major purchased items for which the team holds vendor
+invoices, expressed in \emph{tax-included} renminbi (RMB) exactly as printed on those invoices.
+Consumables such as solder appear in the miscellaneous group.
+Labor estimates follow the course guideline: for each partner, ideal hourly salary $\times$ actual
+hours worked $\times 2.5$.
+Replace the placeholder hours and rates below with values agreed by the team and supported by
+lab notebooks or time logs.
+
+\begin{table}[htb!]
+    \centering
+    \caption{Major procured components (tax-included RMB totals from vendor e-invoices).}
+    \label{tab:bom-major}
+    \begin{tabularx}{\linewidth}{l X r r}
+        \hline
+        \textbf{Category} & \textbf{Item (as used on the aircraft)} &
+            \textbf{Qty} & \textbf{Total (RMB)} \\
+        \hline
+        RC transmitter & RadioMaster Pocket (manual baseline flights) & 1 & 369.00 \\
+        ELRS hardware   & RadioMaster RP1 and RP2 modules (ground + development) & 2 & 198.00 \\
+        Airframe        & Mark4 class five-inch frame kit & 1 & 65.80 \\
+        Prop guards     & Five-inch guard set (vendor: four pieces per set) & 1 set & 66.31 \\
+        Flight computer & SpeedyBee F405 V5 flight controller$^{\dagger}$ & 1 & 348.99 \\
+        Airborne RX     & ExpressLRS RX24T receiver$^{\dagger}$ & 1 & 92.00 \\
+        Power stage (flight article) &
+            OX32 55~A four-in-one ESC (final installed unit after vendor change) & 1 & 298.00 \\
+        Stack bundle    &
+            SpeedyBee F405 V5 stack invoice line (includes FC plus original four-in-one
+            ESC$^{\ddagger}$) & 1 & 152.99 \\
+        Motors          & 1860~KV brushless outrunner & 4 & 263.80 \\
+        Battery         & Six-cell (6S) 22.2~V, 1400~mAh class LiPo & 1 & 168.00 \\
+        Power connector & AMASS XT60 pigtail pair & 1 & 2.75 \\
+        Hardware kits   & M3 screw assortments (two vendor line items combined) & 2 kits & 5.73 \\
+        \hline
+        \multicolumn{4}{l}{\emph{Miscellaneous laboratory support}} \\
+        Solder          & 0.8~mm leaded wire spool & 1 & 16.90 \\
+        Battery charger & ``T6'' class charger for field packs & 1 & 169.15 \\
+        Microcontroller & STM32F103C6T6 module (invoice line item) & 1 & 16.98 \\
+        \hline
+    \end{tabularx}
+\end{table}
+\noindent\footnotesize
+\textit{Notes:}
+$^{\dagger}$Amounts split from a single invoice that paired the F405-class board with the RX24T.
+$^{\ddagger}$Seller line read ``H10d10''; bundle had a four-in-one ESC from a different vendor than OX32.
+That ESC was retired from the flight harness (spare reimbursement); stack row is the bundled charge.
+If F405~V5 appears twice on invoices, drop one row in a single-airframe BOM\@.
+Two ESCs were paid for; only OX32 is installed (Section~\ref{subsec:drone}).
+
+\begin{table}[htb!]
+    \centering
+    \caption{Labor cost worksheet (placeholder---replace hours and salary assumptions).}
+    \label{tab:labor}
+    \begin{tabularx}{\linewidth}{l X r r r}
+        \hline
+        \textbf{Partner} & \textbf{Role focus} &
+            \textbf{Hours} & \textbf{Rate (USD/h)} & \textbf{Cost (USD)} \\
+        \hline
+        Partner A & (smartwatch firmware) & --- & --- & --- \\
+        Partner B & (RF link / ELRS)      & --- & --- & --- \\
+        Partner C & (flight test)         & --- & --- & --- \\
+        \hline
+        \multicolumn{4}{r}{\textbf{Total labor (formula: hours $\times$ rate $\times 2.5$)}} &
+            --- \\
+        \hline
+    \end{tabularx}
+\end{table}
+
+Machine-shop charges or university internal service fees, if any, should be added in the same manner
+with explicit citations to work orders.

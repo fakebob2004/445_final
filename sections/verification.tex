@@ -1,0 +1,89 @@
+Verification was organized in three stages: unit-level bench tests for each subsystem, followed
+by integration tests of the full RF link on the ground, and finally flight tests with all subsystems
+operating simultaneously.
+The Requirement and Verification Table is provided in Appendix~\ref{appendix:rvt}.
+
+\subsection{Voice Control Unit}
+
+\subsubsection{Voice Recognition Latency (R1)}
+
+% TODO: measure and record latency from end of spoken command to VC02 UART byte observed
+%       on ESP32 serial monitor. Suggested method: say command while monitoring
+%       "Voice CMD = X" print on Serial; timestamp with stopwatch or logic analyzer.
+%       Target: < 1 s.
+
+The VC02 recognition latency was evaluated by issuing each of the seven commands five times
+in a quiet indoor environment and recording the time from the end of the spoken keyword to the
+appearance of the ``Voice CMD = X'' debug line on the ESP32 serial console.
+% TODO: insert mean and worst-case latency values (e.g., mean X ms, max Y ms).
+
+\subsubsection{CRSF Frame Transmission (R2, R3)}
+
+The CRSF output was verified with a logic analyzer on the ESP32 GPIO~25 TX line.
+Frames were confirmed to be 26 bytes in length, carrying address byte 0xC8, frame type 0x16,
+and a valid DVB-S2 CRC-8.
+Inter-frame spacing was measured at 20~ms ($\pm$1~ms), corresponding to a 50~Hz command
+rate that satisfies R3.
+The end-to-end software latency from VC02 UART byte reception to the first CRSF frame
+departure was bounded by the 20~ms \texttt{lastSend} timer interval, satisfying R2.
+
+\subsection{ELRS RF Link}
+
+\subsubsection{Link Establishment}
+
+The RP2 transmitter and RX24T receiver were powered simultaneously with matching Binding
+Phrases compiled into both firmware images.
+Link establishment (green LED on RX24T) was observed within 5~s of power-on in all bench
+tests, consistent with the ELRS automatic binding specification.
+
+\subsubsection{Channel Fidelity}
+
+RC channel values output by the RX24T were verified via the Betaflight Configurator receiver
+tab.
+Each commanded channel position (1000, 1500, 2000~\textmu s for roll, pitch, yaw, and
+throttle; 1000 and 2000~\textmu s for arm) was observed to arrive at the flight controller within
+$\pm$3~\textmu s of the intended value, within Betaflight's normal channel noise floor.
+
+\subsubsection{Telemetry Downlink}
+
+Barometric altitude telemetry (CRSF frame type 0x09) was received by the ESP32 and decoded
+correctly, with the altitude value displayed on the OLED matching the Betaflight Configurator
+blackbox readout to within $\pm$0.2~m during static bench tests.
+
+\subsection{Drone Commissioning}
+
+Accelerometer and gyroscope calibration were verified by confirming that the Betaflight
+Configurator attitude indicator remained stable and level ($<$2\textdegree\ reported tilt) when the
+aircraft was placed on a flat surface after calibration.
+Motor directions were verified by visual inspection of prop-wash direction during spin-up tests
+at minimum throttle, with all four motors confirmed correct before propellers were fitted.
+
+\subsection{Flight Tests}
+
+% TODO: Chen Renang to fill in flight test results for R4--R7.
+%       Suggested data to record for each session:
+%       - Number of takeoff attempts / successes
+%       - Hover duration before pilot intervention (seconds)
+%       - Observed forward/backward displacement per pulse command (approximate meters)
+%       - Number of landing attempts / successful disarms without crash
+%       - OLED altitude reading during hover (compare with expected ~0.5--1 m AGL)
+%       - Total number of flight sessions completed
+
+Over the course of the project Chen Renang conducted more than ten flight sessions using the
+RadioMaster Pocket transmitter for baseline verification and the voice control unit for
+demonstration flights.
+% TODO: replace the paragraph below with actual recorded data.
+
+\textbf{Hover stability (R4).}
+% TODO: mean hover duration, standard deviation, number of trials.
+
+\textbf{Directional response (R5).}
+% TODO: observed displacement per forward/backward voice pulse, approximate distance in meters.
+
+\textbf{Landing success (R6).}
+% TODO: number of landing attempts, number of successful disarms.
+
+\textbf{Altitude telemetry (R7).}
+The OLED displayed a valid altitude reading throughout all flight sessions in which the CRSF
+downlink was active.
+% TODO: note any sessions where telemetry was absent and reason (e.g., receiver not configured).

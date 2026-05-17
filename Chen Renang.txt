@@ -1,0 +1,5 @@
+Here’s a professional yet concise job description based on your work:
+
+Job Description (Graduation Project)
+
+In our final-year project, which focuses on controlling drone movement via a smartwatch, I am primarily responsible for debugging and piloting the FPV drone. Using a Radiomaster transmitter, I conduct takeoffs and manual flight control. Throughout the development, I worked with two different ground station software platforms to configure motor directions, install propellers, and fine-tune flight parameters. Despite constant risk of crashes, I successfully completed over 10 high-intensity test flights, ensuring reliable performance for the wristwatch-control system.

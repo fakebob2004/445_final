@@ -1,0 +1,73 @@
+% TODO: update the executive summary once flight test results are finalized.
+This project demonstrated that a voice-command interface built on commodity offline recognition
+hardware can control a quadrotor drone through the full mission cycle of takeoff, directional
+flight, and landing without a conventional RC transmitter.
+The ESP32 and VC02 combination achieved the required command latency budget, the ELRS
+link maintained reliable packet delivery at 50~Hz across all flight sessions, and the SpeedyBee
+F405~V5 platform proved stable on factory PID defaults without manual tuning.
+
+\subsection{Summary of Accomplishments}
+
+The following objectives from the high-level requirements were met:
+
+\begin{itemize}
+    \item A seven-word offline voice command vocabulary was implemented and mapped to
+          flight-controller CRSF channel sequences with correct DVB-S2 framing and timing.
+    \item The ELRS RF link was established using a RadioMaster RP2 reflashed as a CRSF
+          transmitter, achieving automatic pairing via Binding Phrase without physical button
+          binding.
+    \item Stable hover was maintained for multiple seconds after each takeoff command, and
+          directional pulse maneuvers produced observable displacements.
+    \item Barometric altitude telemetry was decoded from the CRSF downlink and displayed on
+          the OLED throughout flight, providing the ground operator with real-time situational
+          awareness.
+    \item % TODO: note landing success rate (e.g., X of Y landing attempts were successful).
+\end{itemize}
+
+\subsection{Ethical Considerations}
+
+This project involved repeated outdoor and indoor flight of a motorized aerial vehicle with
+rotating blades capable of causing injury.
+The IEEE Code of Ethics \cite{ieee-ethics} requires engineers to hold the safety of the public
+paramount and to be honest about the limitations of their work.
+In adherence to these principles, all flight tests were conducted in restricted, supervised areas
+with bystanders kept outside the rotor arc.
+The voice control system incorporates a software interlock that rejects directional commands
+unless the takeoff sequence has already been completed, preventing unintended ground-level
+motor commands.
+Future deployment in public spaces would require regulatory compliance with local UAV
+operating rules and additional hardware failsafes such as a geofence or automatic return-to-home
+function.
+
+The project has broader relevance in the context of accessible human--machine interfaces.
+Voice-driven UAV control reduces the physical skill barrier for operators with limited manual
+dexterity and opens potential applications in disaster response and remote inspection where
+operator hands may be otherwise engaged.
+At the same time, increased accessibility of UAV control raises societal concerns around privacy
+and airspace safety that future iterations of this work should address through both technical
+design choices and engagement with regulatory frameworks.
+
+\subsection{Future Work}
+
+Several improvements would increase the practical utility of the system.
+
+\textbf{Higher command update rate.}
+The current 50~Hz CRSF output rate is sufficient for stable flight but is below the 250~Hz or
+500~Hz rates achievable with ELRS.
+Increasing the rate would reduce the latency between a voice command being received and the
+first corresponding CRSF frame reaching the aircraft.
+
+\textbf{Continuous control modality.}
+Replacing discrete pulse commands with proportional control---for example, by mapping the
+operator's head orientation or a wrist-worn IMU to roll and pitch channels in real time---would
+enable more precise maneuvering and altitude hold.
+
+\textbf{Safety failsafes.}
+A hardware kill-switch input to the ESP32 and a CRSF failsafe channel configuration on the
+flight controller would ensure the motors disarm if the voice link or USB power to the ground
+unit is interrupted unexpectedly.
+
+\textbf{Outdoor range characterization.}
+All verification flights were conducted at short range.
+A systematic link-budget test at increasing distances would characterize the operational envelope
+of the RP2-based transmitter at the ISM\_2400 regulatory domain power level.

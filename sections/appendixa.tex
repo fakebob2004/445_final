@@ -1,0 +1,36 @@
+\section{Requirement and Verification Table} \label{appendix:rvt}
+
+Table~\ref{tab:rvt} lists every requirement from Table~\ref{tab:hlr} alongside the verification
+method used and the result.
+% TODO: fill in the Result column once all test data are collected.
+
+\begin{table}[htb!]
+    \centering
+    \caption{Requirement and Verification Table.}
+    \label{tab:rvt}
+    \begin{tabularx}{\linewidth}{c X l l}
+        \hline
+        \textbf{Req.} & \textbf{Verification method} & \textbf{Target} & \textbf{Result} \\
+        \hline
+        R1 & Time five utterances of each command; record UART byte timestamp via
+             ESP32 serial monitor. &
+             $<$1~s & \emph{TODO} \\
+        R2 & Logic analyzer on GPIO~25; measure time from VC02 byte in ISR to frame
+             first bit on wire. &
+             $<$40~ms & Pass ($\leq$20~ms) \\
+        R3 & Logic analyzer inter-frame period on GPIO~25 TX line. &
+             $\geq$50~Hz & Pass (50~Hz) \\
+        R4 & Record hover duration after each takeoff command across all flight sessions. &
+             $\geq$5~s & \emph{TODO} \\
+        R5 & Observe drone displacement during forward/backward voice commands in open
+             area; estimate distance by reference marker. &
+             Observable & \emph{TODO} \\
+        R6 & Count landing attempts vs.\ successful disarms (motors stop, craft does not
+             invert or crash). &
+             100\% & \emph{TODO} \\
+        R7 & Confirm OLED altitude reading is non-zero and updating during each flight
+             session. &
+             Continuous & \emph{TODO} \\
+        \hline
+    \end{tabularx}
+\end{table}
