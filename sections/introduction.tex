@@ -1,4 +1,6 @@
-\subsection{Motivation}
+This project presents a voice-controlled wearable drone wristband system.
+Besides conventional RC links, the wristband adds offline speech commands so the operator can command
+takeoff, translation, and landing without continuous stick inputs.
 
 Unmanned aerial vehicles (UAVs) controlled through conventional radio transmitters require
 the operator to hold a dedicated handheld unit with two joysticks throughout a flight session.
@@ -53,8 +55,7 @@ integration with a microcontroller straightforward.
         \vspace{1.8cm}
         \textit{Placeholder block diagram---replace with final vector graphic.}
         \vspace{1.8cm}}}
-    \caption{Voice-controlled FPV drone system architecture (ground unit, RF link, and
-        airframe).}
+    \caption{Wearable wristband ground unit, ELRS RF link, and five-inch quadrotor airframe.}
     \label{fig:block-diagram}
 \end{figure}
 
@@ -63,14 +64,14 @@ The ground unit consists of an ESP32 connected to a VC02 voice recognition modul
 SSD1306 OLED display.
 The ESP32 encodes operator voice commands as CRSF RC frames and drives the RadioMaster RP2
 module via UART.
-The RP2, reflashed with ELRS transmitter firmware, broadcasts RC frames at 50~Hz over the
-2.4~GHz ISM band.
-On the aircraft, a RadioMaster RX24T ELRS receiver forwards decoded RC channel data over
-CRSF to the SpeedyBee F405~V5 flight controller running Betaflight.
-The flight controller drives four 1860~KV brushless motors through an OX32 55~A four-in-one
-ESC.
-Barometric altitude telemetry from the flight controller is relayed back through the same RF link
-and decoded by the ESP32, then displayed on the OLED for the ground operator.
+The RP2, reflashed with ELRS transmitter firmware, broadcasts CRSF frames over the 2.4~GHz ISM band.
+On the aircraft, a RadioMaster RX24T receiver forwards decoded RC channels to a SpeedyBee F405~V5
+autopilot.
+Firmware development began under Betaflight for telemetry experiments and later migrated to
+ArduPilot/ArduCopter so altitude hold could run on-board (Section~\ref{sec:flight-controller}).
+Four 1860~KV brushless motors are driven by an OX32 55~A four-in-one ESC\@.
+Telemetry (including barometric altitude when scheduling permits) returns over ELRS for OLED cues on
+the wrist.
 
 \subsection{High-Level Requirements}
 

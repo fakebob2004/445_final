@@ -1,18 +1,10 @@
 \section*{Abstract}
 
-This report presents the design and verification of a voice-controlled quadrotor drone system.
-The ground unit consists of an ESP32 microcontroller paired with a VC02 offline voice
-recognition module and an SSD1306 OLED display.
-Seven spoken commands---takeoff, land, forward, backward, left, right, and stop---are mapped
-to pre-defined RC channel sequences encoded as CRSF frames and transmitted at 50~Hz to a
-RadioMaster RP2 module reflashed with ExpressLRS transmitter firmware.
-The RP2 bridges the commands over a 2.4~GHz RF link to a RadioMaster RX24T receiver on the
-aircraft, which forwards decoded channels to a SpeedyBee F405~V5 flight controller running
-Betaflight.
-Four 1860~KV brushless motors driven by an OX32 55~A ESC execute the commanded
-maneuvers.
-Barometric altitude telemetry is returned over the same RF link and displayed on the ground
-unit's OLED in real time.
-% TODO: fill in verification results once test data are collected.
-% e.g.: The system achieved stable hover for X s after each takeoff command across Y flight
-% sessions, with no RF link losses observed at distances up to Z m.
+This report documents a wristband-style ground unit that uses an ESP32, a VC-02 offline voice module,
+and an SSD1306 OLED to command a five-inch quad through ExpressLRS CRSF frames.
+Flight development included Betaflight telemetry trials followed by an ArduPilot/ArduCopter port for
+native altitude-hold modes.
+Seven spoken commands map to CRSF sequences on a RadioMaster RP2 transmitter module paired with an
+RX24T receiver and a SpeedyBee F405~V5 stack.
+
+% TODO: fill in quantitative verification once flight logs are finalized.

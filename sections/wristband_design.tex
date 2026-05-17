@@ -1,0 +1,265 @@
+This chapter describes the wearable \emph{wristband} ground unit: voice recognition, ESP32
+control firmware, OLED feedback, and the ELRS transmitter interface.
+The block diagram in Figure~\ref{fig:block-diagram} applies to this subsystem and to its
+connection to the aircraft.
+
+%------------------------------------------------------------------------------
+\subsection{System Overview}
+\label{subsec:wristband-overview}
+%------------------------------------------------------------------------------
+
+The wristband system introduces voice recognition as an additional human--machine interface on
+top of conventional RC operation.
+After the user speaks a command, the VC-02 module performs offline keyword spotting and sends a
+one-byte parameter to the ESP32 over UART.
+The ESP32 maps that parameter to CRSF channel values, assembles CRSF frames, and forwards them
+to the ELRS transmitter module for wireless transmission to the aircraft receiver and flight
+controller.
+Compared with a handheld transmitter alone, the wearable flow supports offline recognition (no
+cloud), targets low link latency through ELRS, and keeps both hands free during demonstrations.
+
+%------------------------------------------------------------------------------
+\subsection{ESP32 Main Controller Design}
+\label{subsec:voice}
+%------------------------------------------------------------------------------
+
+The ESP32 is the core controller: it parses UART tokens from the VC-02, manages flight-state logic,
+generates CRSF payloads, and refreshes the OLED.
+
+The firmware uses two hardware UART peripherals with fixed pin assignments (Arduino core
+\texttt{HardwareSerial} instances UART1 and UART2):
+\begin{itemize}
+    \item \textbf{VC-02 link:} RX on GPIO16, TX on GPIO17, 115,200~bps (connected to the module's
+          UART1 in wiring tables; maps to \texttt{HardwareSerial(2)} in the sketch).
+    \item \textbf{ELRS / CRSF link:} TX on GPIO25, RX on GPIO26, 115,200~bps (\texttt{HardwareSerial(1)}).
+\end{itemize}
+
+After each recognized command, the ESP32 updates sixteen CRSF channels (Roll, Pitch, Throttle,
+Yaw, arm, mode, and reserved channels) and transmits a complete CRSF RC frame to the ELRS module
+every 20~ms so the airborne receiver never sees a link timeout.
+
+%------------------------------------------------------------------------------
+\subsection{VC-02 Voice Recognition Module Design}
+%------------------------------------------------------------------------------
+
+An AI-Thinker VC-02 offline voice module performs keyword spotting rather than full-sentence ASR\@.
+Audio is digitized on-module, filtered (noise suppression, AGC, endpoint detection), and represented
+with Mel-frequency cepstral coefficients before template matching against seven stored commands.
+When confidence exceeds an internal threshold, the module emits a UART byte to the ESP32.
+
+Table~\ref{tab:vc-map} matches the spoken words to UART payload values used in firmware.
+UART format is 8N1 at 115,200~bps.
+
+\begin{table}[htb!]
+    \centering
+    \caption{Voice command to UART parameter mapping (VC-02 $\rightarrow$ ESP32).}
+    \label{tab:vc-map}
+    \begin{tabularx}{\linewidth}{l c X}
+        \hline
+        \textbf{Voice command} & \textbf{UART byte} & \textbf{Firmware intent} \\
+        \hline
+        takeoff & 1 & Begin takeoff state machine \\
+        land    & 2 & Begin landing sequence \\
+        forward & 3 & Timed forward pitch pulse \\
+        backward & 4 & Timed backward pitch pulse \\
+        left    & 5 & Yaw left (hold) \\
+        right   & 6 & Yaw right (hold) \\
+        stop    & 7 & Brake / hover depending on prior motion \\
+        \hline
+    \end{tabularx}
+\end{table}
+
+\begin{table}[htb!]
+    \centering
+    \caption{VC-02 module to ESP32 connections.}
+    \label{tab:vc02-hw}
+    \begin{tabularx}{\linewidth}{l l}
+        \hline
+        \textbf{VC-02 pin} & \textbf{ESP32 pin} \\
+        \hline
+        UART TX & GPIO16 (ESP32 RX) \\
+        UART RX & GPIO17 (ESP32 TX) \\
+        GND     & GND \\
+        VCC     & 5~V (per module requirement) \\
+        \hline
+    \end{tabularx}
+\end{table}
+
+%------------------------------------------------------------------------------
+\subsection{Voice Command and Drone Control Logic}
+%------------------------------------------------------------------------------
+
+The ESP32 translates UART tokens into CRSF microsecond channel values.
+Takeoff raises throttle in timed stages, then transitions to a programmed hover PWM; land ramps
+throttle down before disarming.
+Forward and backward commands apply pitch offsets for fixed-duration pulses so the vehicle inches
+without requiring a second utterance; yaw-left and yaw-right bias the yaw channel until another
+command arrives.
+The stop/brake command issues an opposing pitch pulse if the platform was moving forward or
+backward, matching the brake helper states in firmware.
+
+Table~\ref{tab:voice-cmds} summarizes the pulse widths used in the demonstrator binary; mid-stick
+neutral is 1500~\textmu s with arming on auxiliary channel~5.
+
+\begin{table}[htb!]
+    \centering
+    \caption{Voice command set and CRSF channel actions (implementation values).}
+    \label{tab:voice-cmds}
+    \begin{tabularx}{\linewidth}{c l X}
+        \hline
+        \textbf{Byte} & \textbf{Command} & \textbf{Action} \\
+        \hline
+        1 & Takeoff & Arm; THR 1250~\textmu s (1.5~s), 1180~\textmu s (1.5~s), hover 1100~\textmu s \\
+        2 & Land    & Ramp THR toward 1050~\textmu s, disarm \\
+        3 & Forward & Pitch 1550~\textmu s, elevated THR for 1200~ms \\
+        4 & Backward & Pitch 1450~\textmu s, elevated THR for 1200~ms \\
+        5 & Left    & Yaw 1450~\textmu s (hold) \\
+        6 & Right   & Yaw 1550~\textmu s (hold) \\
+        7 & Stop    & Brake pulse or hover \\
+        \hline
+    \end{tabularx}
+\end{table}
+
+Directional commands are ignored until the takeoff routine arms the model, preventing motion
+commands on the bench.
+
+%------------------------------------------------------------------------------
+\subsection{OLED Display Module Design}
+%------------------------------------------------------------------------------
+
+A 128$\times$64 SSD1306 OLED shows action name, armed/flight flags, decoded barometric altitude,
+and CRSF status strings (\texttt{Waiting CRSF\ldots}, \texttt{CRSF OK}, etc.).
+The module uses I\textsuperscript{2}C (\texttt{Wire}) at address 0x3C; on the ESP32 Arduino core the default
+SDA/SCL pins are GPIO21 and GPIO22 unless remapped, matching the wrist strap wiring table used in
+the design review.
+
+%------------------------------------------------------------------------------
+\subsection{ELRS Transmitter Module Design}
+\label{subsec:elrs}
+%------------------------------------------------------------------------------
+
+\subsubsection{Design Procedure}
+
+Three 2.4 GHz RC link protocols were evaluated: Futaba S-FHSS, FrSky ACCESS, and
+ExpressLRS (ELRS).
+Table~\ref{tab:rf-comparison} summarizes the key characteristics of each.
+
+\begin{table}[htb!]
+    \centering
+    \caption{Comparison of evaluated 2.4 GHz RC link protocols.}
+    \label{tab:rf-comparison}
+    \begin{tabularx}{\linewidth}{l c c c c}
+        \hline
+        \textbf{Protocol} & \textbf{Max update rate} & \textbf{Min latency} &
+            \textbf{Open source} & \textbf{TX power} \\
+        \hline
+        Futaba S-FHSS  & 55 Hz    & $\approx$18 ms & No  & Fixed      \\
+        FrSky ACCESS   & 150 Hz   & $\approx$7 ms  & No  & Fixed      \\
+        ELRS 2.4 GHz   & 1000 Hz  & $<$5 ms        & Yes & Configurable \\
+        \hline
+    \end{tabularx}
+\end{table}
+
+Futaba S-FHSS operates at a fixed 55 Hz and uses a closed firmware ecosystem, precluding
+integration with custom transmitter hardware.
+FrSky ACCESS supports up to 150 Hz but similarly relies on proprietary firmware.
+ELRS is an open-source protocol supporting update rates from 50 Hz to 1000 Hz with a publicly
+documented firmware stack that can be compiled and deployed on commodity hardware.
+ELRS was selected for its low latency, configurable update rate, and compatibility with custom
+transmitter hardware.
+
+For the transmitter unit, two hardware options were considered.
+The first is a dedicated ELRS TX module (e.g., RadioMaster Ranger Micro), which provides a
+self-contained solution with a preconfigured USB interface.
+The second is a RadioMaster RP2 receiver module reflashed with ELRS transmitter firmware.
+A dedicated TX module adds unnecessary cost and physical bulk for a fixed ground station
+installation.
+The RP2 module, when flashed with the \emph{RX as TX} firmware variant, performs identically as a
+transmitter while occupying a smaller footprint at lower cost.
+The RP2-as-TX approach was adopted.
+
+\subsubsection{Hardware}
+
+The RadioMaster RP2 module contains two primary integrated circuits.
+The Espressif ESP8285 is a single-chip microcontroller integrating a 32-bit Tensilica L106 core
+and a 2.4 GHz 802.11b/g/n Wi-Fi radio.
+In the ELRS firmware context, the ESP8285 executes the protocol stack, manages the CRSF
+serial interface to the host device, and controls the RF transceiver over SPI.
+The Semtech SX1280 is a 2.4 GHz multi-mode transceiver supporting FLRC (Fast Long-Range
+Communication) modulation, which ELRS employs at high update rates to achieve packet air times
+below 1 ms and end-to-end round-trip latencies below 5 ms at 250 Hz.
+
+\begin{table}[htb!]
+    \centering
+    \caption{ELRS transmitter module to ESP32 connections.}
+    \label{tab:elrs-hw}
+    \begin{tabularx}{\linewidth}{l l}
+        \hline
+        \textbf{ELRS pin} & \textbf{ESP32 pin} \\
+        \hline
+        TX (to ESP32 RX) & GPIO26 \\
+        RX (from ESP32 TX) & GPIO25 \\
+        GND & GND \\
+        VCC & 5~V (module requirement) \\
+        \hline
+    \end{tabularx}
+\end{table}
+
+\subsubsection{Firmware Configuration}
+\label{subsubsec:fw-config}
+
+Firmware was compiled using the ExpressLRS Configurator application.
+Three parameters were fixed at compile time.
+
+\textbf{Firmware target.}
+The target
+\texttt{Generic 2.4\,GHz /\allowbreak Generic ESP8285 2.4\,GHz RX as TX} was selected.
+This variant configures the ELRS firmware to initiate and maintain the RF link, assigning the
+module the transmitter role in the ELRS packet timing scheme.
+A standard receiver build (\texttt{Generic ESP8285 2.4\,GHz RX}) causes the module to listen
+for an external transmitter signal and never initiate packets, making it unsuitable for ground-side
+use.
+
+\textbf{Regulatory domain.}
+The \texttt{ISM\_2400} domain was selected in preference to \texttt{CE\_LBT}
+(Listen-Before-Talk).
+The CE\_LBT domain mandates that the transmitter sense channel occupancy before each
+transmission and defer if the channel is busy.
+At high update rates (500 Hz and 1000 Hz), LBT overhead reduces telemetry throughput; ISM\_2400
+avoids that limitation.
+
+\textbf{Binding Phrase.}
+A user-defined alphanumeric string is compiled into both the transmitter and receiver firmware
+builds for automatic linking at power-on.
+
+\subsubsection{Initial Firmware Flashing}
+\label{subsubsec:flashing}
+
+The ESP8285 enters UART boot when GPIO0 is held low at reset.
+Typical procedure: hold Boot, apply power, release, then flash at 921,600~bps.
+If a USB--UART adapter idles low on TX, power the RP2 before attaching TTL leads so strap pins
+sample the idle-high state.
+Later updates may use the module WebUI.
+
+\subsubsection{CRSF UART Baud Rate to the ESP32}
+\label{subsubsec:crsf}
+
+The ESP32 and RP2 use 115,200~bps 8N1 for CRSF in the wristband firmware build.
+A 26-byte frame therefore occupies about 2.26~ms, well within the 20~ms service interval used in
+software.
+
+\subsubsection{Telemetry Configuration}
+\label{subsubsec:telemetry}
+
+When the RP2 serves as the RF head for the wristband stack, downlink telemetry (battery, barometric
+altitude, link statistics) is configured through standard ELRS Lua helpers on full-size radios, or
+through CRSF inspection paths during bench bring-up.
+For laptop ground station use the WebUI \emph{Use as AirPort Serial device} mode can forward
+telemetry at higher USB bridge rates.
+
+\subsubsection{CRSF Framing on the ESP32}
+\label{subsubsec:crsf-fw}
+
+Sixteen channel widths in 1000--2000~\textmu s are mapped into CRSF 11-bit words, packed into 22 bytes,
+and wrapped with the DVB-S2 CRC in a 26-byte frame addressed to 0xC8 with type~0x16, as required
+by the CRSF RC-channels packet definition.

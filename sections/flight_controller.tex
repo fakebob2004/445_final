@@ -1,0 +1,73 @@
+This chapter documents flight-controller bring-up on the SpeedyBee F405~V5 platform: Betaflight
+telemetry experiments, sensor and motor commissioning on Betaflight, the later ArduPilot migration
+for altitude-hold modes, and manual qualification with a conventional transmitter prior to wristband
+demonstrations.
+
+The aircraft carries a SpeedyBee F405~V5 autopilot, an OX32 55~A four-in-one ESC, four 1860~KV
+motors, and a RadioMaster RX24T receiver fed by the ELRS link described in Section~\ref{subsec:elrs}.
+
+%------------------------------------------------------------------------------
+\subsection{Initial Betaflight Telemetry Scheme and Testing}
+%------------------------------------------------------------------------------
+
+Early work used Betaflight on the F405~V5 with the goal of closing an outer altitude loop on the
+wristband using telemetry returned over ELRS\@.
+Several CRSF telemetry frame types (GPS altitude, barometric altitude, attitude, battery) were
+enabled and prioritized in Betaflight so altitude data could be forwarded to the ESP32 for display
+and for hypothetical throttle corrections.
+Firmware images were rebuilt after each scheduler change and flashed through the Betaflight
+Configurator.
+
+GPS altitude could be decoded but updated slowly and with coarse resolution.
+Barometric altitude offered finer resolution in principle, yet under the tested ELRS schedules the
+baro packets were not received consistently enough for closed-loop altitude control on the wearable.
+Some frames appeared on the flight controller UART yet disappeared or were rate-limited across the
+wireless hop.
+
+These results showed that a wearable closed loop based on delayed or bursty telemetry was not
+reliable for hover regulation, so the team abandoned outer-loop altitude trimming on the ESP32 in
+favor of onboard ArduPilot altitude hold (see below) while still decoding barometric frames when available for
+pilot awareness on the OLED.
+
+\subsubsection{Betaflight Commissioning, Sensor Calibration, and Motor Verification}
+
+Before first flight the following steps were performed over USB in Betaflight Configurator.
+
+\textbf{Sensor calibration.}
+Accelerometer calibration used the six-position wizard with the quad held still on each facet.
+Gyro calibration used a motionless bench capture.
+
+\textbf{Motor direction.}
+Each motor was spun individually at minimum throttle on the Motors tab.
+Two motors were reversed by swapping a pair of ESC phase leads until the prop-wash matched the
+intended geometry.
+Props were installed only after all four directions were verified.
+
+\textbf{PID tuning policy.}
+Factory Betaflight PID gains were retained; the team did not run a manual tuning loop because
+the five-inch 1860~KV airframe responded adequately with defaults during hover shakedown.
+
+\subsection{ArduPilot/ArduCopter Firmware Migration and AltHold Control}
+
+To improve hover behavior, the flight controller was migrated from Betaflight to ArduPilot/
+ArduCopter.
+ArduPilot provides native \emph{AltHold} mode that closes altitude using the onboard barometer and
+IMU, removing the need for low-rate telemetry on the wristband to close that loop.
+
+The correct ArduCopter firmware target for the SpeedyBee F405~V5 was downloaded and flashed.
+Mission Planner was then used to select the quad frame class, configure DShot (or the selected ESC
+protocol), map the CRSF receiver to RC inputs, assign flight modes, and clear pre-arm checks.
+
+With ArduPilot, the wristband continues to issue ordinary CRSF stick channels---it behaves like a
+compact transmitter.
+For example a ``hover'' intent can be realized by selecting AltHold via the mode channel while biasing
+throttle near mid-stick; the inner-loop altitude regulator runs entirely on the autopilot.
+Compared with the Betaflight telemetry experiment, this architecture trades wearable-side complexity
+for deterministic stabilization and cleaner safety properties.
+
+\subsection{Manual Flight Qualification}
+
+A RadioMaster Pocket transmitter exercised the aircraft through motor checks, trim, and baseline
+acro/angle flights before wristband-only demos.
+The pilot (Chen Renang) adapted to handling and confirmed stable hover behavior, establishing a
+reference for later comparisons against voice-command latency.

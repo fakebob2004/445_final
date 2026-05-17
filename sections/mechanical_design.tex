@@ -1,0 +1,39 @@
+This chapter covers quad assembly and mechanical integration of the wearable enclosure.
+
+%------------------------------------------------------------------------------
+\subsection{Drone Mechanical Design}
+\label{subsec:drone}
+%------------------------------------------------------------------------------
+
+Two ground-station suites (Betaflight Configurator and Mission Planner, depending on firmware stage)
+were used to configure motor spin, calibrate ESC endpoints, verify receiver channels, and complete
+pre-flight checklists.
+
+Motor direction and propeller pairing received particular attention: each corner was tested in
+isolation because incorrect torque or blade orientation leads to immediate flips on takeoff.
+After firmware setup, motors were spun in the Configurator and visually checked before props were
+mounted.
+Clockwise and counter-clockwise props were installed according to the Mark4-style frame geometry,
+then throttle sweeps confirmed all four corners produced thrust in the correct direction.
+
+Those steps reduced crash risk during the intensive flight campaign and supported repeated takeoff,
+hover, and translation tests invoked from either the Pocket transmitter or the wristband.
+
+Beyond rigging, the airframe is a five-inch class FPV build on a Mark4-style kit with four 1860~KV
+brushless motors, five-inch props, and a four-piece prop guard set for low-altitude experiments.
+
+%------------------------------------------------------------------------------
+\subsection{Wristband Enclosure Design}
+
+\subsubsection{Enclosure Requirements and CAD Design}
+
+A dedicated wrist-wearable enclosure was CADed for bench and field demos.
+Internal bosses position the ESP32, VC-02 board, ELRS module, and wiring harness; cutouts expose the
+OLED window and the microphone port so keywords remain intelligible while the display stays visible.
+The form factor targets low mass and short moment arm on the pilot's wrist.
+
+\subsubsection{3D Printing and Assembly}
+
+The housing was manufactured with consumer FDM printers across several fit-check iterations.
+After tuning tolerances, the stack became more compact than the early breadboard prototype and
+survived repeated strap-on operations during outdoor flights.

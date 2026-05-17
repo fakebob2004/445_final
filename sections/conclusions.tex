@@ -1,10 +1,12 @@
 % TODO: update the executive summary once flight test results are finalized.
 This project demonstrated that a voice-command interface built on commodity offline recognition
-hardware can control a quadrotor drone through the full mission cycle of takeoff, directional
-flight, and landing without a conventional RC transmitter.
-The ESP32 and VC02 combination achieved the required command latency budget, the ELRS
-link maintained reliable packet delivery at 50~Hz across all flight sessions, and the SpeedyBee
-F405~V5 platform proved stable on factory PID defaults without manual tuning.
+hardware can command a quadrotor through takeoff, translation, and landing using the wristband
+voice path (following conventional transmitter checkout flights).
+The ESP32 and VC-02 combination met the wristband command-latency budget, and the ELRS link
+delivered CRSF frames at the firmware's 50~Hz cadence.
+On the aircraft, early Betaflight builds were used for telemetry experiments; the final autonomy
+stack relied on ArduPilot AltHold for closed-loop altitude, reducing dependence on downlink
+telemetry for hover regulation.
 
 \subsection{Summary of Accomplishments}
 
